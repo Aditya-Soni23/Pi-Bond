@@ -1,0 +1,23 @@
+{
+    "short_name": "Pi-Bond",
+    "name": "Pi-Bond Fitness",
+    "icons": [
+      {
+        "src": "logo.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any maskable"
+      },
+      {
+        "src": "logo.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ],
+    "start_url": ".",
+    "display": "standalone",
+    "theme_color": "#ff5f1f",
+    "background_color": "#0a0a0c",
+    "orientation": "portrait",
+    "description": "High-intensity fitness tracking and kinetic evolution protocol."
+  }

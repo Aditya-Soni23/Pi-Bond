@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PI-BOND | Fitness</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Plus+Jakarta+Sans:wght@300;500;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff5f1f; /* Volcanic Orange */
+            --secondary: #ffaf00;
+            --accent: #ffffff;
+            --bg: #0a0a0c;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --ease: cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        /* 1. Mesh Gradient Background Animation */
+        @keyframes mesh {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: white;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 95, 31, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255, 175, 0, 0.05) 0%, transparent 40%);
+            min-height: 100vh;
+        }
+
+        /* --- 10+ Major Animations --- */
+        @keyframes float-subtle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } } /* 2 */
+        @keyframes slide-up { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } } /* 3 */
+        @keyframes scale-in { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } } /* 4 */
+        @keyframes glow-pulse { 0%, 100% { box-shadow: 0 0 10px rgba(255, 95, 31, 0.2); } 50% { box-shadow: 0 0 30px rgba(255, 95, 31, 0.5); } } /* 5 */
+        @keyframes text-shimmer { 0% { background-position: -200%; } 100% { background-position: 200%; } } /* 6 */
+        @keyframes bar-fill { from { width: 0; } } /* 7 */
+        @keyframes border-draw { 0% { border-color: transparent; } 100% { border-color: var(--primary); } } /* 8 */
+        @keyframes rotate-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } /* 9 */
+        @keyframes blur-in { from { filter: blur(20px); opacity: 0; } to { filter: blur(0); opacity: 1; } } /* 10 */
+        @keyframes bounce-gentle { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } } /* 11 */
+
+        .dashboard {
+            max-width: 1200px;
+            margin: auto;
+            padding: 40px 20px;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+            animation: blur-in 1s var(--ease);
+        }
+
+        /* --- UI Elements --- */
+        .hero-section {
+            grid-column: span 12;
+            text-align: left;
+            padding: 40px 0;
+            animation: slide-up 0.8s var(--ease);
+        }
+
+        h1 {
+            font-family: 'Syncopate', sans-serif;
+            font-size: clamp(2rem, 8vw, 4.5rem);
+            margin: 0;
+            line-height: 0.9;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            background: linear-gradient(90deg, #fff, #888, #fff);
+            background-size: 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: text-shimmer 5s linear infinite;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 32px;
+            padding: 30px;
+            backdrop-filter: blur(16px);
+            transition: all 0.4s var(--ease);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary);
+            transform: translateY(-5px); /* 12. Hover Lift */
+        }
+
+        .stat-large {
+            font-size: 4rem;
+            font-weight: 800;
+            letter-spacing: -3px;
+            margin: 10px 0;
+        }
+
+        /* --- Specialized Layout --- */
+        .col-8 { grid-column: span 8; }
+        .col-4 { grid-column: span 4; }
+        .col-6 { grid-column: span 6; }
+
+        /* --- Progress Ring/Bar --- */
+        .progress-container {
+            height: 60px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 100px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            border-radius: 100px;
+            transition: width 1.5s var(--ease);
+            animation: bar-fill 1.5s var(--ease);
+        }
+
+        /* --- Inputs --- */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 18px;
+            color: white;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            background: rgba(255,255,255,0.1);
+            border-color: var(--primary);
+        }
+
+        button {
+            background: var(--accent);
+            color: black;
+            border: none;
+            padding: 22px;
+            border-radius: 18px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: 0.3s;
+            animation: glow-pulse 3s infinite;
+        }
+
+        button:hover {
+            transform: scale(1.02);
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Character/Evolution Box */
+        .evo-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, rgba(255,95,31,0.15) 0%, transparent 70%);
+        }
+
+        .evo-box img {
+            max-width: 80%;
+            filter: drop-shadow(0 0 30px rgba(255,95,31,0.3));
+            animation: float-subtle 4s ease-in-out infinite;
+        }
+
+        #toast {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            color: black;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 700;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            animation: slide-up 0.4s var(--ease);
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 900px) {
+            .col-8, .col-4, .col-6 { grid-column: span 12; }
+            h1 { font-size: 3rem; }
+            .dashboard { padding: 20px; }
+        }
+        /* Logo & Title Alignment */
+.logo-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 30px; /* Space between logo and text */
+}
+
+.main-logo {
+    height: clamp(80px, 15vw, 140px); /* Scales perfectly on mobile/laptop */
+    width: auto;}
+
+/* 13th Animation: Logo Entrance */
+@keyframes logo-entrance {
+    0% { 
+        opacity: 0; 
+        transform: translateX(-50px) rotate(-20deg); 
+        filter: brightness(0) invert(1);
+    }
+    100% { 
+        opacity: 1; 
+        transform: translateX(0) rotate(0deg); 
+        filter: brightness(1) invert(0);
+    }
+}
+
+/* Mobile Tweak for Logo */
+@media (max-width: 600px) {
+    .logo-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .main-logo {
+        height: 70px;
+    }
+}
+    </style>
+</head>
+<body>
+
+<div id="toast">ENTRY LOGGED</div>
+
+<div class="dashboard">
+  <div class="hero-section">
+    <div class="logo-wrapper">
+        <img src="logo.png" alt="Logo" class="main-logo">
+        <div class="title-text">
+            <h3>Fitness</h3>
+            <h1>PI-BOND<br></h1>
+        </div>
+    </div>
+</div>
+
+    <div class="card col-8">
+        <h3 style="opacity: 0.5;">GOAL</h3>
+        <div class="progress-container">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-weight: 800;">
+            <span id="progressText">0% READY</span>
+            <span id="totalCaloriesDisplay">0 / 14300 KCAL</span>
+        </div>
+    </div>
+    <div class="card col-4" style="display: flex; flex-direction: column; justify-content: center;">
+      <h3 style="opacity: 0.5;">REMAINING</h3>
+      <div class="stat-large" id="daysLeft" style="color: var(--primary);">--</div>
+      <p>DAYS IN CYCLE</p>
+  </div>
+    <div class="card col-4" style="text-align: center;">
+        <h3 style="color: var(--primary)">STREAK</h3>
+        <div class="stat-large" id="streak">0</div>
+        <p style="margin:0; opacity: 0.6;">CONSECUTIVE DAYS</p>
+    </div>
+
+
+    <div class="card col-4 evo-box">
+        <img id="figure" src="image1.png" alt="Evolution Status">
+    </div>
+
+ 
+
+    <div class="card col-4 input-group">
+      <h3>LOG ACTIVITY</h3>
+      <input type="number" id="time" placeholder="DURATION (MIN)">
+      <input type="number" id="speed" placeholder="AVG SPEED (KM/H)">
+      <button onclick="submitWorkout()">PUSH DATA</button>
+  </div>
+    <div class="card col-4" style="background: linear-gradient(45deg, rgba(255,95,31,0.1), transparent);">
+        <p style="font-size: 1.2rem; margin: 0;"><strong>PRO-TIP:</strong> Burn ~318 cal daily.</p>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyB5bEOGksxhgjOFEBW205jvdZSvrWoaWnY",
+        authDomain: "pi-bond-34f5b.firebaseapp.com",
+        projectId: "pi-bond-34f5b",
+        storageBucket: "pi-bond-34f5b.firebasestorage.app",
+        messagingSenderId: "510880603023",
+        appId: "1:510880603023:web:a63b69a42876cbec6449fa",
+        measurementId: "G-29BFSFSY8S"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const statsRef = ref(db, 'fitness/aditya');
+
+    let startDate = new Date('2026-04-11');
+    let goalDays = 45;
+    let goalCalories = 14300;
+
+    onValue(statsRef, (snapshot) => {
+        const data = snapshot.val() || { totalCalories: 0, streak: 0 };
+        updateUI(data.totalCalories, data.streak);
+    });
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 3000);
+    }
+
+    function updateUI(totalCalories, streak) {
+        let today = new Date();
+        let diff = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+        let remaining = goalDays - diff;
+        if(remaining < 0) remaining = 0;
+
+        document.getElementById('daysLeft').innerText = remaining;
+        document.getElementById('streak').innerText = streak;
+        document.getElementById('totalCaloriesDisplay').innerText = `${totalCalories.toLocaleString()} / ${goalCalories} KCAL`;
+
+        let percent = (totalCalories / goalCalories) * 100;
+        if(percent > 100) percent = 100;
+        document.getElementById('progress').style.width = percent + '%';
+        document.getElementById('progressText').innerText = percent.toFixed(1) + '% COMPLETED';
+
+        let img = document.getElementById('figure');
+        if(remaining <= 45 && remaining > 35) img.src='image1.png';
+        else if(remaining <= 35 && remaining > 25) img.src='image2.png';
+        else if(remaining <= 25 && remaining > 15) img.src='image3.png';
+        else img.src='image4.png';
+    }
+
+    window.submitWorkout = function() {
+        let time = document.getElementById('time').value;
+        let speed = document.getElementById('speed').value;
+
+        if(!time || !speed) return showToast('DATA MISSING');
+
+        let MET = speed >= 12 ? 11.5 : speed >= 10 ? 9.8 : speed >= 8 ? 9 : speed >= 6 ? 7 : 4.5;
+        let calAdded = Math.round(MET * 65 * (time / 60));
+
+        onValue(statsRef, (snapshot) => {
+            const current = snapshot.val() || { totalCalories: 0, streak: 0 };
+            
+            update(statsRef, {
+                totalCalories: current.totalCalories + calAdded,
+                streak: current.streak + 1,
+                lastUpdated: new Date().toISOString()
+            }).then(() => {
+                showToast(`+${calAdded} KCAL ADDED`);
+                document.getElementById('time').value = '';
+                document.getElementById('speed').value = '';
+            });
+        }, { onlyOnce: true });
+    };
+</script>
+</body>
+</html>
