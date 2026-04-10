@@ -300,7 +300,11 @@
         <p style="font-size: 1.2rem; margin: 0;"><strong>PRO-TIP:</strong> Burn ~318 cal daily.</p>
     </div>
 </div>
-
+<script>
+    if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
