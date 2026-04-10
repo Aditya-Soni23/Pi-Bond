@@ -245,6 +245,28 @@
         height: 70px;
     }
 }
+/* Graph Widget Specifics */
+.graph-card {
+    grid-column: span 12;
+    overflow-x: auto; /* Enable horizontal scroll */
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+}
+
+.graph-container {
+    min-width: 800px; /* Forces scroll on smaller screens */
+    height: 300px;
+    position: relative;
+}
+
+/* Custom Scrollbar for Chrome/Safari */
+.graph-card::-webkit-scrollbar {
+    height: 6px;
+}
+.graph-card::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 10px;
+}
     </style>
 </head>
 <body>
@@ -277,6 +299,12 @@
       <div class="stat-large" id="daysLeft" style="color: var(--primary);">--</div>
       <p>DAYS IN CYCLE</p>
   </div>
+  <div class="card graph-card">
+    <h3 style="opacity: 0.5; margin-bottom: 20px;">PERFORMANCE ARCHIVE</h3>
+    <div class="graph-container">
+        <canvas id="burnChart"></canvas>
+    </div>
+</div>
     <div class="card col-4" style="text-align: center;">
         <h3 style="color: var(--primary)">STREAK</h3>
         <div class="stat-large" id="streak">0</div>
@@ -300,6 +328,7 @@
         <p style="font-size: 1.2rem; margin: 0;"><strong>PRO-TIP:</strong> Burn ~318 cal daily.</p>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js');
@@ -307,8 +336,9 @@
 </script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, update, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+    // 1. Firebase Configuration
     const firebaseConfig = {
         apiKey: "AIzaSyB5bEOGksxhgjOFEBW205jvdZSvrWoaWnY",
         authDomain: "pi-bond-34f5b.firebaseapp.com",
@@ -322,16 +352,72 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const statsRef = ref(db, 'fitness/aditya');
+    const historyRef = ref(db, 'fitness/aditya/history');
 
+    // 2. Constants & State
     let startDate = new Date('2026-04-11');
     let goalDays = 45;
     let goalCalories = 14300;
+    let burnChart;
 
+    // 3. Initialize Chart
+    function initChart() {
+        const canvas = document.getElementById('burnChart');
+        if (!canvas || typeof Chart === 'undefined') return setTimeout(initChart, 100);
+
+        const ctx = canvas.getContext('2d');
+        burnChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Calories Burned',
+                    data: [],
+                    borderColor: '#ff5f1f',
+                    backgroundColor: 'rgba(255, 95, 31, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#ffaf00'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#fff' } },
+                    x: { grid: { display: false }, ticks: { color: '#fff' } }
+                }
+            }
+        });
+    }
+
+    // 4. Data Listeners
     onValue(statsRef, (snapshot) => {
         const data = snapshot.val() || { totalCalories: 0, streak: 0 };
         updateUI(data.totalCalories, data.streak);
     });
 
+    onValue(historyRef, (snapshot) => {
+        const historyData = snapshot.val();
+        if (historyData && burnChart) {
+            const entries = Object.values(historyData);
+            const labels = entries.map(entry => entry.date);
+            const values = entries.map(entry => entry.calories);
+            
+            burnChart.data.labels = labels;
+            burnChart.data.datasets[0].data = values;
+            burnChart.update();
+            
+            // Auto-scroll the graph card to the latest entry
+            const card = document.querySelector('.graph-card');
+            if(card) card.scrollLeft = card.scrollWidth;
+        }
+    });
+
+    // 5. UI Functions
     function showToast(msg) {
         const toast = document.getElementById('toast');
         toast.innerText = msg;
@@ -361,6 +447,7 @@
         else img.src='image4.png';
     }
 
+    // 6. Global Submit Function
     window.submitWorkout = function() {
         let time = document.getElementById('time').value;
         let speed = document.getElementById('speed').value;
@@ -369,14 +456,24 @@
 
         let MET = speed >= 12 ? 11.5 : speed >= 10 ? 9.8 : speed >= 8 ? 9 : speed >= 6 ? 7 : 4.5;
         let calAdded = Math.round(MET * 65 * (time / 60));
+        let dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
         onValue(statsRef, (snapshot) => {
             const current = snapshot.val() || { totalCalories: 0, streak: 0 };
             
+            // Update Totals
             update(statsRef, {
-                totalCalories: current.totalCalories + calAdded,
-                streak: current.streak + 1,
+                totalCalories: (current.totalCalories || 0) + calAdded,
+                streak: (current.streak || 0) + 1,
                 lastUpdated: new Date().toISOString()
+            });
+
+            // Push to Graph History
+            const newHistoryRef = push(historyRef);
+            set(newHistoryRef, {
+                date: dateStr,
+                calories: calAdded,
+                timestamp: Date.now()
             }).then(() => {
                 showToast(`+${calAdded} KCAL ADDED`);
                 document.getElementById('time').value = '';
@@ -384,6 +481,9 @@
             });
         }, { onlyOnce: true });
     };
+
+    // Run Chart Init
+    initChart();
 </script>
 </body>
 </html>
