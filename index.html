@@ -248,17 +248,24 @@
 /* Graph Widget Specifics */
 .graph-card {
     grid-column: span 12;
-    overflow-x: auto; /* Enable horizontal scroll */
-    scrollbar-width: thin;
-    scrollbar-color: var(--primary) transparent;
+    overflow-x: auto; 
+    position: relative;
+    min-height: 400px; /* Force a minimum height for the card */
 }
 
 .graph-container {
-    min-width: 800px; /* Forces scroll on smaller screens */
-    height: 300px;
+    min-width: 800px; 
+    height: 350px; 
     position: relative;
+    width: 100%;
 }
 
+/* Add this to ensure the canvas doesn't collapse to 0px */
+#burnChart {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
 /* Custom Scrollbar for Chrome/Safari */
 .graph-card::-webkit-scrollbar {
     height: 6px;
@@ -299,12 +306,7 @@
       <div class="stat-large" id="daysLeft" style="color: var(--primary);">--</div>
       <p>DAYS IN CYCLE</p>
   </div>
-  <div class="card graph-card">
-    <h3 style="opacity: 0.5; margin-bottom: 20px;">PERFORMANCE ARCHIVE</h3>
-    <div class="graph-container">
-        <canvas id="burnChart"></canvas>
-    </div>
-</div>
+
     <div class="card col-4" style="text-align: center;">
         <h3 style="color: var(--primary)">STREAK</h3>
         <div class="stat-large" id="streak">0</div>
@@ -313,7 +315,7 @@
 
 
     <div class="card col-4 evo-box">
-        <img id="figure" src="image1.png" alt="Evolution Status">
+        <img id="figure" src="image4.png" alt="Evolution Status">
     </div>
 
  
@@ -328,18 +330,18 @@
         <p style="font-size: 1.2rem; margin: 0;"><strong>PRO-TIP:</strong> Burn ~318 cal daily.</p>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js');
 }
 </script>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, update, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-    // 1. Firebase Configuration
-    const firebaseConfig = {
+    import { getDatabase, ref, update, onValue, push, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    
+   // 1. Firebase Configuration
+   const firebaseConfig = {
         apiKey: "AIzaSyB5bEOGksxhgjOFEBW205jvdZSvrWoaWnY",
         authDomain: "pi-bond-34f5b.firebaseapp.com",
         projectId: "pi-bond-34f5b",
@@ -348,23 +350,27 @@
         appId: "1:510880603023:web:a63b69a42876cbec6449fa",
         measurementId: "G-29BFSFSY8S"
     };
-
+    
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    
     const statsRef = ref(db, 'fitness/aditya');
     const historyRef = ref(db, 'fitness/aditya/history');
-
-    // 2. Constants & State
+    
+    // ⚙️ Constants
     let startDate = new Date('2026-04-11');
     let goalDays = 45;
     let goalCalories = 14300;
-    let burnChart;
-
-    // 3. Initialize Chart
+    let burnChart = null;
+    
+    // 🎯 INIT CHART
     function initChart() {
         const canvas = document.getElementById('burnChart');
-        if (!canvas || typeof Chart === 'undefined') return setTimeout(initChart, 100);
-
+        if (!canvas || !window.Chart) {
+            setTimeout(initChart, 100);
+            return;
+        }
+    
         const ctx = canvas.getContext('2d');
         burnChart = new Chart(ctx, {
             type: 'line',
@@ -377,9 +383,7 @@
                     backgroundColor: 'rgba(255, 95, 31, 0.1)',
                     borderWidth: 3,
                     fill: true,
-                    tension: 0.4,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#ffaf00'
+                    tension: 0.4
                 }]
             },
             options: {
@@ -387,103 +391,141 @@
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#fff' } },
-                    x: { grid: { display: false }, ticks: { color: '#fff' } }
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#fff' },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    x: {
+                        ticks: { color: '#fff' },
+                        grid: { display: false }
+                    }
                 }
             }
         });
     }
-
-    // 4. Data Listeners
+    
+    // 📊 LISTEN: STATS
     onValue(statsRef, (snapshot) => {
         const data = snapshot.val() || { totalCalories: 0, streak: 0 };
-        updateUI(data.totalCalories, data.streak);
+        updateUI(data.totalCalories || 0, data.streak || 0);
     });
-
+    
+    // 📈 LISTEN: HISTORY (FIXED)
     onValue(historyRef, (snapshot) => {
         const historyData = snapshot.val();
-        if (historyData && burnChart) {
-            const entries = Object.values(historyData);
-            const labels = entries.map(entry => entry.date);
-            const values = entries.map(entry => entry.calories);
-            
-            burnChart.data.labels = labels;
-            burnChart.data.datasets[0].data = values;
+        if (!historyData) return;
+    
+        function waitForChart() {
+            if (!burnChart) {
+                setTimeout(waitForChart, 100);
+                return;
+            }
+    
+            const entries = Object.values(historyData).sort((a, b) => a.timestamp - b.timestamp);
+    
+            burnChart.data.labels = entries.map(e => e.date);
+            burnChart.data.datasets[0].data = entries.map(e => e.calories);
             burnChart.update();
-            
-            // Auto-scroll the graph card to the latest entry
+    
             const card = document.querySelector('.graph-card');
-            if(card) card.scrollLeft = card.scrollWidth;
+            if (card) card.scrollLeft = card.scrollWidth;
         }
+    
+        waitForChart();
     });
-
-    // 5. UI Functions
+    
+    // 🔔 TOAST
     function showToast(msg) {
         const toast = document.getElementById('toast');
         toast.innerText = msg;
         toast.style.display = 'block';
         setTimeout(() => toast.style.display = 'none', 3000);
     }
-
+    
+    // 🎨 UI UPDATE
     function updateUI(totalCalories, streak) {
         let today = new Date();
         let diff = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
         let remaining = goalDays - diff;
-        if(remaining < 0) remaining = 0;
-
+        if (remaining < 0) remaining = 0;
+    
         document.getElementById('daysLeft').innerText = remaining;
         document.getElementById('streak').innerText = streak;
-        document.getElementById('totalCaloriesDisplay').innerText = `${totalCalories.toLocaleString()} / ${goalCalories} KCAL`;
-
+        document.getElementById('totalCaloriesDisplay').innerText =
+            `${totalCalories.toLocaleString()} / ${goalCalories} KCAL`;
+    
         let percent = (totalCalories / goalCalories) * 100;
-        if(percent > 100) percent = 100;
+        if (percent > 100) percent = 100;
+    
         document.getElementById('progress').style.width = percent + '%';
-        document.getElementById('progressText').innerText = percent.toFixed(1) + '% COMPLETED';
-
+        document.getElementById('progressText').innerText =
+            percent.toFixed(1) + '% COMPLETED';
+    
         let img = document.getElementById('figure');
-        if(remaining <= 45 && remaining > 35) img.src='image1.png';
-        else if(remaining <= 35 && remaining > 25) img.src='image2.png';
-        else if(remaining <= 25 && remaining > 15) img.src='image3.png';
-        else img.src='image4.png';
+        if (remaining > 35) img.src = 'image4.png';
+        else if (remaining > 25) img.src = 'image3.png';
+        else if (remaining > 15) img.src = 'image2.png';
+        else img.src = 'image1.png';
     }
-
-    // 6. Global Submit Function
-    window.submitWorkout = function() {
-        let time = document.getElementById('time').value;
-        let speed = document.getElementById('speed').value;
-
-        if(!time || !speed) return showToast('DATA MISSING');
-
-        let MET = speed >= 12 ? 11.5 : speed >= 10 ? 9.8 : speed >= 8 ? 9 : speed >= 6 ? 7 : 4.5;
+    
+    // 🚀 SUBMIT WORKOUT (FIXED)
+    window.submitWorkout = async function () {
+        const timeInput = document.getElementById('time');
+        const speedInput = document.getElementById('speed');
+    
+        let time = parseFloat(timeInput.value);
+        let speed = parseFloat(speedInput.value);
+    
+        if (!time || !speed) return showToast('DATA MISSING');
+    
+        let MET = speed >= 12 ? 11.5 :
+                  speed >= 10 ? 9.8 :
+                  speed >= 8 ? 9 :
+                  speed >= 6 ? 7 : 4.5;
+    
         let calAdded = Math.round(MET * 65 * (time / 60));
-        let dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-        onValue(statsRef, (snapshot) => {
+        let dateStr = new Date().toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric'
+        });
+    
+        try {
+            const snapshot = await get(statsRef);
             const current = snapshot.val() || { totalCalories: 0, streak: 0 };
-            
-            // Update Totals
-            update(statsRef, {
+    
+            // 🔥 Update stats
+            await update(statsRef, {
                 totalCalories: (current.totalCalories || 0) + calAdded,
                 streak: (current.streak || 0) + 1,
                 lastUpdated: new Date().toISOString()
             });
-
-            // Push to Graph History
-            const newHistoryRef = push(historyRef);
-            set(newHistoryRef, {
+    
+            // 🔥 Push history
+            const newRef = push(historyRef);
+            await set(newRef, {
                 date: dateStr,
                 calories: calAdded,
                 timestamp: Date.now()
-            }).then(() => {
-                showToast(`+${calAdded} KCAL ADDED`);
-                document.getElementById('time').value = '';
-                document.getElementById('speed').value = '';
             });
-        }, { onlyOnce: true });
+    
+            showToast(`+${calAdded} KCAL ADDED`);
+            timeInput.value = '';
+            speedInput.value = '';
+    
+        } catch (err) {
+    console.error("FULL ERROR:", err);
+    showToast('ERROR');
+}
     };
-
-    // Run Chart Init
-    initChart();
-</script>
+    
+    // ⏳ INIT
+    if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', initChart);
+    } else {
+        initChart();
+    }
+    </script>
+    
 </body>
 </html>
